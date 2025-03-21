@@ -1,0 +1,63 @@
+name: 发布发行版本
+
+on:
+  workflow_dispatch: # 手动触发
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    steps:
+      # 检出代码
+      - name: 检出代码
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 # 获取所有提交历史，确保可以获取到version文件的提交记录
+
+      # 读取版本号
+      - name: 读取版本号
+        id: get_version
+        run: |
+          VERSION=$(cat version)
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "VERSION_TAG=v$VERSION" >> $GITHUB_ENV # 创建版本标签变量
+
+      # 获取 version 文件最后一次提交信息
+      - name: 获取 version 文件最后一次提交信息
+        id: get_version_commit
+        run: |
+          COMMIT_HASH=$(git log -n 1 --pretty=format:"%H" version)
+          if [[ -z "$COMMIT_HASH" ]]; then
+            echo "没有找到 version 文件的提交记录，使用最后一次提交信息"
+            COMMIT_MSG=$(git log -1 --pretty=%B)
+          else
+            COMMIT_MSG=$(git log -1 --pretty=%B $COMMIT_HASH)
+          fi
+          echo "COMMIT_MSG<<EOF" >> $GITHUB_ENV
+          echo "$COMMIT_MSG" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
+      # 创建源代码压缩包
+      - name: 创建源代码压缩包
+        run: |
+          zip -r win-rclone-webdav-${{ env.VERSION }}.zip . -x "*.git*"
+
+      # 创建预发布
+      - name: 创建预发布
+        uses: softprops/action-gh-release@v1
+        with:
+          name: ${{ env.VERSION_TAG }} # 使用版本标签
+          tag_name: ${{ env.VERSION_TAG }} # 使用版本标签
+          body: |
+            ## 版本 ${{ env.VERSION_TAG }}
+
+            ### 更新说明
+            ${{ env.COMMIT_MSG }}
+
+            ### 源代码
+            包含完整的源代码，不包含 git 相关文件。
+          files: |
+            win-rclone-webdav-${{ env.VERSION }}.zip
+          draft: false
+          prerelease: true # 设置为预发布
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
