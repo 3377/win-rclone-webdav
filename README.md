@@ -4,7 +4,7 @@
 
 ## 📝 项目介绍
 
-这是一个使用批处理脚本开发的 Windows 系统 WebDAV 自动挂载工具，基于强大的[rclone](https://rclone.org/)实现。通过简单的菜单操作，你可以轻松地将 WebDAV 服务挂载为本地磁盘驱动器，实现快速、稳定的文件访问。
+这是一个使用批处理脚本开发的适用于 Windows 系统 WebDAV 自动挂载工具，基于强大的[rclone](https://rclone.org/)实现。通过简单的菜单操作，你可以轻松地将 WebDAV 服务挂载为本地磁盘驱动器，实现快速、稳定的文件访问。
 
 ## ✨ 功能特点
 
@@ -31,7 +31,7 @@
 ```conf
 [drfycloud]
 type = webdav
-url = https://你的WebDAV服务地址
+url = https://example.com/dav/ 示范为alist的webdavURL
 vendor = 供应商类型（如nextcloud、owncloud等，可选）
 user = 你的用户名
 pass = 加密后的密码（可通过工具选项6生成）
@@ -39,16 +39,16 @@ pass = 加密后的密码（可通过工具选项6生成）
 
 ### 关键参数配置表
 
-| 参数           | 说明              | 示例值                       | 配置位置                      |
-| -------------- | ----------------- | ---------------------------- | ----------------------------- |
-| `[drfycloud]`  | 配置名称          | `[drfycloud]`                | rclone.conf 文件第 1 行       |
-| `type`         | 服务类型          | `webdav`                     | rclone.conf 文件第 2 行       |
-| `url`          | WebDAV 服务器地址 | `https://example.com/webdav` | rclone.conf 文件第 3 行       |
-| `vendor`       | 供应商类型        | `nextcloud`                  | rclone.conf 文件第 4 行       |
-| `user`         | 登录账号          | `yourname`                   | rclone.conf 文件第 5 行       |
-| `pass`         | 加密后的密码      | `xxxx加密字符串xxxx`         | rclone.conf 文件第 6 行       |
-| `CACHE_DIR`    | 缓存目录路径      | `D:\drfycloudtmp`            | fywebdav.bat 文件开头常量部分 |
-| `DRIVE_LETTER` | 挂载的盘符        | `H:`                         | fywebdav.bat 文件开头常量部分 |
+| 参数           | 说明              | 示例值                     | 配置位置                      |
+| -------------- | ----------------- | -------------------------- | ----------------------------- |
+| `[drfycloud]`  | 配置名称          | `[drfycloud]`              | rclone.conf 文件第 1 行       |
+| `type`         | 服务类型          | `webdav`                   | rclone.conf 文件第 2 行       |
+| `url`          | WebDAV 服务器地址 | `https://example.com/dav/` | rclone.conf 文件第 3 行       |
+| `vendor`       | 供应商类型        | `nextcloud`                | rclone.conf 文件第 4 行       |
+| `user`         | 登录账号          | `yourname`                 | rclone.conf 文件第 5 行       |
+| `pass`         | 加密后的密码      | `xxxx加密字符串xxxx`       | rclone.conf 文件第 6 行       |
+| `CACHE_DIR`    | 缓存目录路径      | `D:\drfycloudtmp`          | fywebdav.bat 文件开头常量部分 |
+| `DRIVE_LETTER` | 挂载的盘符        | `H:`                       | fywebdav.bat 文件开头常量部分 |
 
 ### 批处理脚本中可调整的高级参数
 
