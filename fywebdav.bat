@@ -105,7 +105,7 @@ rem 创建临时批处理文件来启动挂载进程
     echo     exit /b
     echo ^)
     echo echo %%date%% %%time%% - 开始挂载 rclone... ^>^> "%LOG_FILE%"
-    echo rclone mount drfycloud:/ %DRIVE_LETTER% --config "%CONFIG_FILE%" --vfs-cache-mode full --cache-dir %CACHE_DIR% --use-mmap --dir-cache-time 5m  --buffer-size 4096M --vfs-read-chunk-size 128M --vfs-read-chunk-size-limit 2G --vfs-cache-max-size 10G --vfs-cache-max-age 12h --transfers 16 --checkers 16 --no-modtime --no-check-certificate --log-file "%RCLONE_LOG%" --log-level INFO
+    echo rclone mount drfycloud:/ %DRIVE_LETTER% --config "%CONFIG_FILE%" --vfs-cache-mode full --cache-dir %CACHE_DIR% --use-mmap --dir-cache-time 1m --attr-timeout 1m  --buffer-size 4096M --vfs-read-chunk-size 128M --vfs-read-chunk-size-limit 2G --vfs-cache-max-size 10G --vfs-cache-max-age 12h --transfers 16 --checkers 16 --metadata  --no-check-certificate --log-file "%RCLONE_LOG%" --log-level INFO
     echo echo %%date%% %%time%% - 挂载断开，10秒后重新连接... ^>^> "%LOG_FILE%"
     echo timeout /t 10 /nobreak ^> nul
     echo goto start
