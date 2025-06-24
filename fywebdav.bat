@@ -63,12 +63,14 @@ call :print_line "3. 检查挂载状态"
 call :print_line "4. 设置开机自启动"
 call :print_line "5. 取消开机自启动"
 call :print_line "6. 获取 rclone 的加密密码"
-call :print_line "7. 退出"
+call :print_line "7. 运行连接诊断工具"
+call :print_line "8. 检查 rclone 版本信息"
+call :print_line "9. 退出"
 call :print_line "================================================="
 call :print_line
 
 set choice=
-set /p choice=请选择操作 (1-7): 
+set /p choice=请选择操作 (1-9): 
 
 if "%choice%"=="1" goto mount
 if "%choice%"=="2" goto unmount
@@ -76,7 +78,9 @@ if "%choice%"=="3" goto status
 if "%choice%"=="4" goto autostart
 if "%choice%"=="5" goto remove_autostart
 if "%choice%"=="6" goto encrypt_password
-if "%choice%"=="7" goto end
+if "%choice%"=="7" goto diagnostic
+if "%choice%"=="8" goto version_check
+if "%choice%"=="9" goto end
 
 call :print_error "无效的选择，请重试..."
 timeout /t 2 /nobreak > nul
@@ -385,18 +389,115 @@ if not exist "%~dp0rclone.exe" (
 rem 获取密码输入
 set /p "password=请输入密码: "
 
+if "!password!"=="" (
+    call :print_error "密码不能为空！"
+    call :pause_and_continue
+    goto menu
+)
+
 rem 加密密码
 call :print_info "正在加密密码..."
 echo.
+for /f "usebackq tokens=*" %%a in (`echo^|"%~dp0rclone.exe" obscure "%password%"`) do set encrypted=%%a
+
+if "!encrypted!"=="" (
+    call :print_error "密码加密失败！"
+    call :pause_and_continue
+    goto menu
+)
+
 call :print_success "您的加密密码是："
 echo.
-for /f "usebackq tokens=*" %%a in (`echo^|"%~dp0rclone.exe" obscure "%password%"`) do set encrypted=%%a
 echo !encrypted!
 echo.
 call :print_info "您现在可以复制这个加密密码"
 call :print_info "并将其粘贴到 rclone.conf 文件中"
 call :print_info "在 'pass = ' 行之后。"
 echo.
+
+rem 询问是否自动更新配置文件
+set /p "auto_update=是否自动更新到配置文件？(y/n): "
+if /i "!auto_update!"=="y" (
+    call :update_password_in_config "!encrypted!"
+) else (
+    call :print_info "请手动将加密密码复制到 rclone.conf 文件中"
+)
+echo.
+call :pause_and_continue
+goto menu
+
+rem ======================================
+rem 运行连接诊断工具
+rem ======================================
+:diagnostic
+call :print_info "正在启动连接诊断工具..."
+
+if not exist "%~dp0webdav_diagnostic.bat" (
+    call :print_error "未找到诊断工具文件 webdav_diagnostic.bat"
+    call :print_error "请确保该文件与主脚本在同一目录中"
+    call :pause_and_continue
+    goto menu
+)
+
+call :print_info "启动诊断工具，窗口将单独打开..."
+start "WebDAV诊断工具" cmd /c "%~dp0webdav_diagnostic.bat"
+
+call :print_success "诊断工具已启动！"
+call :print_info "请查看新打开的窗口中的诊断结果"
+call :pause_and_continue
+goto menu
+
+rem ======================================
+rem 检查 rclone 版本信息
+rem ======================================
+:version_check
+call :print_info "正在检查 rclone 版本信息..."
+
+if not exist "rclone.exe" (
+    call :print_error "未找到 rclone.exe 文件"
+    call :pause_and_continue
+    goto menu
+)
+
+call :print_header "rclone 版本信息"
+rclone version
+
+echo.
+call :print_header "系统信息"
+echo 操作系统: %OS%
+echo 处理器架构: %PROCESSOR_ARCHITECTURE%
+echo 计算机名: %COMPUTERNAME%
+echo 用户名: %USERNAME%
+
+echo.
+call :print_header "配置信息"
+if exist "%CONFIG_FILE%" (
+    call :print_success "配置文件存在: %CONFIG_FILE%"
+    echo 配置文件大小: 
+    for %%A in ("%CONFIG_FILE%") do echo %%~zA 字节
+    echo 最后修改时间:
+    for %%A in ("%CONFIG_FILE%") do echo %%~tA
+) else (
+    call :print_error "配置文件不存在: %CONFIG_FILE%"
+)
+
+echo.
+call :print_header "挂载状态"
+tasklist /fi "imagename eq rclone.exe" 2>nul | find "rclone.exe" > nul
+if !errorlevel! equ 0 (
+    call :print_success "rclone 进程正在运行"
+    echo 进程详情:
+    tasklist /fi "imagename eq rclone.exe" | find "rclone.exe"
+) else (
+    call :print_error "rclone 进程未运行"
+)
+
+if exist "%DRIVE_LETTER%\" (
+    call :print_success "%DRIVE_LETTER% 盘已挂载"
+) else (
+    call :print_error "%DRIVE_LETTER% 盘未挂载"
+)
+
 call :pause_and_continue
 goto menu
 
@@ -423,6 +524,78 @@ exit /b
 echo ================================================
 echo              %~1
 echo ================================================
+exit /b
+
+rem ======================================
+rem 自动更新配置文件中的密码
+rem ======================================
+:update_password_in_config
+set "new_encrypted_password=%~1"
+
+call :print_info "正在备份并更新配置文件..."
+
+rem 创建备份目录
+if not exist "%~dp0config_backup" mkdir "%~dp0config_backup" > nul 2>&1
+
+rem 创建备份文件（带时间戳）
+set "backup_file=%~dp0config_backup\rclone.conf.%date:~0,4%-%date:~5,2%-%date:~8,2%_%time:~0,2%-%time:~3,2%-%time:~6,2%"
+set "backup_file=!backup_file: =0!"
+copy "%CONFIG_FILE%" "!backup_file!" > nul 2>&1
+
+if !errorlevel! equ 0 (
+    call :print_success "配置文件已备份到: !backup_file!"
+    echo %date% %time% - 配置文件备份成功: !backup_file! >> "%LOG_FILE%"
+) else (
+    call :print_warning "备份配置文件失败，但继续更新..."
+    echo %date% %time% - 配置文件备份失败 >> "%LOG_FILE%"
+)
+
+rem 更新配置文件中的密码
+call :print_info "更新配置文件中的密码..."
+
+rem 创建临时文件
+set "temp_config=%~dp0temp_rclone.conf"
+
+rem 逐行读取并更新密码行
+(
+    for /f "usebackq delims=" %%a in ("%CONFIG_FILE%") do (
+        set "line=%%a"
+        echo !line! | findstr "^pass.*=" > nul
+        if !errorlevel! equ 0 (
+            echo pass = !new_encrypted_password!
+        ) else (
+            echo !line!
+        )
+    )
+) > "!temp_config!"
+
+rem 替换原配置文件
+move "!temp_config!" "%CONFIG_FILE%" > nul 2>&1
+
+if !errorlevel! equ 0 (
+    call :print_success "配置文件密码更新成功！"
+    echo %date% %time% - 密码更新成功 >> "%LOG_FILE%"
+    
+    rem 验证更新后的配置
+    call :print_info "验证更新后的配置..."
+    rclone --config "%CONFIG_FILE%" config show drfycloud > nul 2>&1
+    if !errorlevel! equ 0 (
+        call :print_success "配置验证通过！"
+        call :print_info "建议运行选项7进行连接测试"
+    ) else (
+        call :print_error "配置验证失败！请手动检查配置文件"
+    )
+) else (
+    call :print_error "更新配置文件失败！"
+    echo %date% %time% - 密码更新失败 >> "%LOG_FILE%"
+    
+    rem 尝试恢复备份
+    if exist "!backup_file!" (
+        copy "!backup_file!" "%CONFIG_FILE%" > nul 2>&1
+        call :print_info "已尝试恢复备份文件"
+    )
+)
+
 exit /b
 
 :print_success
