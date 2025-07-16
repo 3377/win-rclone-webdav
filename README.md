@@ -6,6 +6,9 @@
 
 这是一个使用批处理脚本开发的适用于 Windows 系统 WebDAV 自动挂载工具，基于强大的[rclone](https://rclone.org/)实现。通过简单的菜单操作，你可以轻松地将 WebDAV 服务挂载为本地磁盘驱动器，实现快速、稳定的文件访问。
 
+## ✨ 特别注意
+- **解压压缩包到非中文目录，默认设置的缓存位置为D盘根目录文件夹，如果没有D盘，请修改bat文件里面的对应位置**
+
 ## ✨ 功能特点
 
 - 🔌 一键挂载 WebDAV 到本地磁盘（默认 H 盘）
@@ -32,7 +35,7 @@
 [drfycloud]
 type = webdav
 url = https://example.com/dav/ 示范为alist的webdavURL
-vendor = 供应商类型（如nextcloud、owncloud等，可选）
+vendor = 供应商类型（如nextcloud、owncloud等，可选，不确定请填写other）
 user = 你的用户名
 pass = 加密后的密码（可通过工具选项6生成）
 ```
